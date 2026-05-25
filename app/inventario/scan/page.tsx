@@ -6,21 +6,24 @@ import Link from "next/link";
 import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import { supabase } from "@/lib/supabase";
 
+type Estado = "iniciando" | "escaneando" | "buscando" | "error" | "no-encontrado";
+
 export default function ScanPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
-  const [estado, setEstado] = useState<"iniciando" | "escaneando" | "buscando" | "error" | "no-encontrado">("iniciando");
+  const procesandoRef = useRef(false); // bloquea lecturas mientras procesa una
+  const [estado, setEstado] = useState<Estado>("iniciando");
   const [mensaje, setMensaje] = useState<string>("");
-  const [ultimoCodigo, setUltimoCodigo] = useState<string>("");
+  const [codigoLeido, setCodigoLeido] = useState<string>("");
 
+  // Iniciar la cámara SOLO una vez al montar
   useEffect(() => {
     const reader = new BrowserMultiFormatReader();
     let cancelado = false;
 
     async function iniciar() {
       try {
-        // Pedir cámara trasera preferentemente
         const controls = await reader.decodeFromConstraints(
           {
             video: {
@@ -30,15 +33,16 @@ export default function ScanPage() {
           videoRef.current!,
           async (result) => {
             if (!result || cancelado) return;
-            const codigo = result.getText();
-            if (codigo === ultimoCodigo) return; // evitar lecturas duplicadas
-            setUltimoCodigo(codigo);
-            setEstado("buscando");
+            if (procesandoRef.current) return; // ya estamos procesando otra lectura
 
-            // Vibrar el móvil si soporta
+            const codigo = result.getText();
+            procesandoRef.current = true;
+
             if (navigator.vibrate) navigator.vibrate(100);
 
-            // Buscar en Supabase
+            setCodigoLeido(codigo);
+            setEstado("buscando");
+
             const { data, error } = await supabase
               .from("items")
               .select("id")
@@ -48,18 +52,20 @@ export default function ScanPage() {
             if (cancelado) return;
 
             if (error) {
-              setMensaje("Error al buscar: " + error.message);
+              setMensaje(error.message);
               setEstado("error");
+              procesandoRef.current = false;
               return;
             }
 
             if (!data) {
-              setMensaje(codigo);
               setEstado("no-encontrado");
+              // Paramos la cámara para liberarla; reintentar volverá a montar la página
+              controlsRef.current?.stop();
               return;
             }
 
-            // Encontrado: parar cámara y navegar
+            // Encontrado: paramos cámara y navegamos al item
             controlsRef.current?.stop();
             router.push(`/inventario/${data.id}`);
           }
@@ -82,12 +88,11 @@ export default function ScanPage() {
       cancelado = true;
       controlsRef.current?.stop();
     };
-  }, [router, ultimoCodigo]);
+  }, [router]); // <-- SIN ultimoCodigo; solo se monta una vez
 
   function reintentar() {
-    setUltimoCodigo("");
-    setEstado("escaneando");
-    setMensaje("");
+    // Recarga la página entera para reiniciar la cámara limpiamente
+    window.location.reload();
   }
 
   return (
@@ -114,27 +119,37 @@ export default function ScanPage() {
         />
 
         {/* Marco visual */}
-        <div className="relative z-10 w-72 h-44 border-4 border-white/80 rounded-2xl shadow-2xl">
-          <div className="absolute -inset-1 border-2 border-blue-400/60 rounded-2xl animate-pulse" />
-        </div>
+        {(estado === "iniciando" || estado === "escaneando") && (
+          <div className="relative z-10 w-72 h-44 border-4 border-white/80 rounded-2xl shadow-2xl">
+            <div className="absolute -inset-1 border-2 border-blue-400/60 rounded-2xl animate-pulse" />
+          </div>
+        )}
       </div>
 
       {/* Pie de estado */}
-      <div className="p-6 text-center text-white bg-black/60 min-h-[140px] flex flex-col items-center justify-center gap-3">
+      <div className="p-6 text-center text-white bg-black/70 min-h-[180px] flex flex-col items-center justify-center gap-3">
         {estado === "iniciando" && <p>Activando cámara...</p>}
+
         {estado === "escaneando" && (
           <p className="text-sm opacity-80">
             Apunta al código de barras del item
           </p>
         )}
-        {estado === "buscando" && <p>Buscando en tu inventario...</p>}
+
+        {estado === "buscando" && (
+          <>
+            <p className="font-medium">🔎 Buscando en tu inventario...</p>
+            <p className="text-xs opacity-70 font-mono">{codigoLeido}</p>
+          </>
+        )}
+
         {estado === "no-encontrado" && (
           <>
             <p className="text-amber-300 font-medium">
               ⚠️ Código no registrado
             </p>
-            <p className="text-xs opacity-70 font-mono">{mensaje}</p>
-            <div className="flex gap-2 mt-2">
+            <p className="text-xs opacity-70 font-mono">{codigoLeido}</p>
+            <div className="flex gap-2 mt-2 flex-wrap justify-center">
               <button
                 onClick={reintentar}
                 className="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-xl"
@@ -142,14 +157,15 @@ export default function ScanPage() {
                 Escanear otro
               </button>
               <Link
-                href={`/inventario/nuevo?codigo=${encodeURIComponent(mensaje)}`}
+                href={`/inventario/nuevo?codigo=${encodeURIComponent(codigoLeido)}`}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-xl"
               >
-                Crear item con este código
+                ➕ Crear item con este código
               </Link>
             </div>
           </>
         )}
+
         {estado === "error" && (
           <>
             <p className="text-red-400 font-medium">❌ {mensaje}</p>
