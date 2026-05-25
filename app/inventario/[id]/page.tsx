@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseServer } from "@/lib/supabase-server";
 import { Item } from "@/lib/types";
 import ItemActions from "./ItemActions";
 import CodigoBarras from "./CodigoBarras";
@@ -10,6 +10,7 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ItemDetallePage({ params }: PageProps) {
   const { id } = await params;
+  const supabase = await getSupabaseServer();
 
   const { data: item, error } = await supabase
     .from("items")
