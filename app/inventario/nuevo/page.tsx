@@ -1,21 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { generarCodigoBarras } from "@/lib/codigos";
 
 export default function NuevoItemPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const codigoPrefill = searchParams.get("codigo") ?? "";
+
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [categoria, setCategoria] = useState("");
-  const [tipoCodigo, setTipoCodigo] = useState<"auto" | "manual">("auto");
-  const [codigoManual, setCodigoManual] = useState("");
+  const [tipoCodigo, setTipoCodigo] = useState<"auto" | "manual">(
+    codigoPrefill ? "manual" : "auto"
+  );
+  const [codigoManual, setCodigoManual] = useState(codigoPrefill);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Si llega un código por URL después del primer render, también prerrellenamos
+  useEffect(() => {
+    if (codigoPrefill) {
+      setTipoCodigo("manual");
+      setCodigoManual(codigoPrefill);
+    }
+  }, [codigoPrefill]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,8 +83,13 @@ export default function NuevoItemPage() {
           Nuevo item
         </h1>
 
+        {codigoPrefill && (
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-3 rounded-xl text-sm mb-6">
+            📷 Código escaneado prerellenado: <span className="font-mono">{codigoPrefill}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nombre */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Nombre <span className="text-red-500">*</span>
@@ -86,7 +104,6 @@ export default function NuevoItemPage() {
             />
           </div>
 
-          {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Descripción
@@ -100,7 +117,6 @@ export default function NuevoItemPage() {
             />
           </div>
 
-          {/* Cantidad y Categoría en fila */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -128,7 +144,6 @@ export default function NuevoItemPage() {
             </div>
           </div>
 
-          {/* Tipo de código */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Código de barras
@@ -173,14 +188,12 @@ export default function NuevoItemPage() {
             </p>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-sm">
               {error}
             </div>
           )}
 
-          {/* Botones */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"

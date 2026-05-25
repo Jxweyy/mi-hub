@@ -33,12 +33,20 @@ export default async function InventarioPage() {
             </p>
           </div>
 
-          <Link
-            href="/inventario/nuevo"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-sm transition-colors"
-          >
-            + Añadir item
-          </Link>
+            <div className="flex gap-2">
+            <Link
+                href="/inventario/scan"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-sm transition-colors"
+            >
+                📷 Escanear
+            </Link>
+            <Link
+                href="/inventario/nuevo"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-sm transition-colors"
+            >
+                + Añadir
+            </Link>
+            </div>
         </header>
 
         {error && (
