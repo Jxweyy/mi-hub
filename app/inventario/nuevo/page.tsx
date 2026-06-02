@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { generarCodigoBarras } from "@/lib/codigos";
+import SubirFoto from "../SubirFoto";
 
 function FormularioNuevoItem() {
   const router = useRouter();
@@ -19,6 +20,7 @@ function FormularioNuevoItem() {
     codigoPrefill ? "manual" : "auto"
   );
   const [codigoManual, setCodigoManual] = useState(codigoPrefill);
+  const [imagenUrl, setImagenUrl] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +53,7 @@ function FormularioNuevoItem() {
         cantidad,
         categoria: categoria.trim() || null,
         codigo_barras,
+        imagen_url: imagenUrl,
       })
       .select()
       .single();
@@ -83,11 +86,14 @@ function FormularioNuevoItem() {
 
       {codigoPrefill && (
         <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-3 rounded-xl text-sm mb-6">
-          📷 Código escaneado prerellenado: <span className="font-mono">{codigoPrefill}</span>
+          📷 Código escaneado prerellenado:{" "}
+          <span className="font-mono">{codigoPrefill}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <SubirFoto fotoActualUrl={imagenUrl} onCambiada={setImagenUrl} />
+
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
             Nombre <span className="text-red-500">*</span>

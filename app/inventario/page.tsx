@@ -149,6 +149,10 @@ export default function InventarioPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {itemsFiltrados.map((item) => (
               <a key={item.id} href={`/inventario/${item.id}`} className="block bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
+                {item.imagen_url && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={item.imagen_url} alt={item.nombre} className="w-full h-32 object-cover rounded-xl mb-3" />
+                )}
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-semibold text-slate-900 dark:text-white text-lg">{item.nombre}</h3>
                   <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${item.cantidad === 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" : item.cantidad < 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"}`}>

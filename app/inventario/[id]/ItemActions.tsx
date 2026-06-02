@@ -4,22 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Item } from "@/lib/types";
+import SubirFoto from "../SubirFoto";
 
 export default function ItemActions({ item }: { item: Item }) {
   const router = useRouter();
 
-  // Estado de cantidad
   const [cantidad, setCantidad] = useState(item.cantidad);
   const [guardandoCantidad, setGuardandoCantidad] = useState(false);
 
-  // Estado de edición de campos
   const [editando, setEditando] = useState(false);
   const [nombre, setNombre] = useState(item.nombre);
   const [descripcion, setDescripcion] = useState(item.descripcion ?? "");
   const [categoria, setCategoria] = useState(item.categoria ?? "");
+  const [imagenUrl, setImagenUrl] = useState<string | null>(item.imagen_url);
   const [guardandoCampos, setGuardandoCampos] = useState(false);
 
-  // Otros estados
   const [borrando, setBorrando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +60,7 @@ export default function ItemActions({ item }: { item: Item }) {
         nombre: nombre.trim(),
         descripcion: descripcion.trim() || null,
         categoria: categoria.trim() || null,
+        imagen_url: imagenUrl,
         actualizado_en: new Date().toISOString(),
       })
       .eq("id", item.id);
@@ -80,6 +80,7 @@ export default function ItemActions({ item }: { item: Item }) {
     setNombre(item.nombre);
     setDescripcion(item.descripcion ?? "");
     setCategoria(item.categoria ?? "");
+    setImagenUrl(item.imagen_url);
     setEditando(false);
     setError(null);
   }
@@ -88,6 +89,18 @@ export default function ItemActions({ item }: { item: Item }) {
     const ok = confirm(`¿Borrar "${item.nombre}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     setBorrando(true);
+
+    // Borrar foto del storage si existe
+    if (item.imagen_url) {
+      try {
+        const partes = item.imagen_url.split("/items/");
+        if (partes.length >= 2) {
+          await supabase.storage.from("items").remove([partes[1]]);
+        }
+      } catch {
+        // ignorar
+      }
+    }
 
     const { error: dbError } = await supabase
       .from("items")
@@ -112,9 +125,10 @@ export default function ItemActions({ item }: { item: Item }) {
 
   return (
     <div className="p-6">
-      {/* Bloque de edición de campos */}
       {editando ? (
         <div className="space-y-4 mb-6 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl">
+          <SubirFoto fotoActualUrl={imagenUrl} onCambiada={setImagenUrl} />
+
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               Nombre
@@ -167,15 +181,27 @@ export default function ItemActions({ item }: { item: Item }) {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setEditando(true)}
-          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mb-4 inline-flex items-center gap-1 transition-colors"
-        >
-          ✏️ Editar nombre, descripción o categoría
-        </button>
+        <>
+          {item.imagen_url && (
+            <div className="mb-6 flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.imagen_url}
+                alt={item.nombre}
+                className="w-48 h-48 object-cover rounded-2xl shadow-md"
+              />
+            </div>
+          )}
+
+          <button
+            onClick={() => setEditando(true)}
+            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mb-4 inline-flex items-center gap-1 transition-colors"
+          >
+            ✏️ Editar nombre, descripción, foto o categoría
+          </button>
+        </>
       )}
 
-      {/* Display gigante de cantidad */}
       <div className="text-center mb-6">
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
           Cantidad actual
@@ -183,7 +209,6 @@ export default function ItemActions({ item }: { item: Item }) {
         <p className={`text-7xl font-bold ${colorCantidad}`}>{cantidad}</p>
       </div>
 
-      {/* Botones +/- */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button
           onClick={() => actualizarCantidad(cantidad - 1)}
@@ -201,7 +226,6 @@ export default function ItemActions({ item }: { item: Item }) {
         </button>
       </div>
 
-      {/* Campo numérico para edición exacta */}
       <div className="flex gap-2 mb-4">
         <input
           type="number"
