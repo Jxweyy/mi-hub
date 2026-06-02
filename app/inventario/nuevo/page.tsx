@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { generarCodigoBarras } from "@/lib/codigos";
 import SubirFoto from "../SubirFoto";
+import SelectorCategoria from "../SelectorCategoria";
 
 function FormularioNuevoItem() {
   const router = useRouter();
@@ -179,15 +180,9 @@ function FormularioNuevoItem() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Cantidad inicial
+              Categoría
             </label>
-            <input
-              type="number"
-              min={0}
-              value={cantidad}
-              onChange={(e) => setCantidad(Number(e.target.value))}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
+            <SelectorCategoria valor={categoria} onCambio={setCategoria} />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

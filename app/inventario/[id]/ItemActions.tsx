@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Item } from "@/lib/types";
 import SubirFoto from "../SubirFoto";
+import SelectorCategoria from "../SelectorCategoria";
 
 export default function ItemActions({ item }: { item: Item }) {
   const router = useRouter();
@@ -151,18 +152,12 @@ export default function ItemActions({ item }: { item: Item }) {
               className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              Categoría
-            </label>
-            <input
-              type="text"
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              placeholder="Ej: Electrónica"
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Categoría
+              </label>
+              <SelectorCategoria valor={categoria} onCambio={setCategoria} />
+            </div>
           <div className="flex gap-2">
             <button
               onClick={guardarCampos}
