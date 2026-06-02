@@ -11,25 +11,66 @@ function FormularioNuevoItem() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const codigoPrefill = searchParams.get("codigo") ?? "";
+  const nombrePrefill = searchParams.get("nombre") ?? "";
+  const categoriaPrefill = searchParams.get("categoria") ?? "";
+  const imagenPrefill = searchParams.get("imagen") ?? "";
 
-  const [nombre, setNombre] = useState("");
+  const [nombre, setNombre] = useState(nombrePrefill);
   const [descripcion, setDescripcion] = useState("");
   const [cantidad, setCantidad] = useState(1);
-  const [categoria, setCategoria] = useState("");
+  const [categoria, setCategoria] = useState(categoriaPrefill);
   const [tipoCodigo, setTipoCodigo] = useState<"auto" | "manual">(
     codigoPrefill ? "manual" : "auto"
   );
   const [codigoManual, setCodigoManual] = useState(codigoPrefill);
   const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+  const [importandoImagen, setImportandoImagen] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cuando llega una imagen desde Open Food Facts, la descargamos
+  // y la subimos a nuestro propio storage de Supabase
   useEffect(() => {
-    if (codigoPrefill) {
-      setTipoCodigo("manual");
-      setCodigoManual(codigoPrefill);
+    if (!imagenPrefill || imagenUrl || importandoImagen) return;
+
+    async function importarImagen() {
+      setImportandoImagen(true);
+      try {
+        const res = await fetch(imagenPrefill);
+        if (!res.ok) throw new Error("No se pudo descargar la imagen");
+        const blob = await res.blob();
+
+        const ext = blob.type.split("/")[1] || "jpg";
+        const nombreArchivo = `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("items")
+          .upload(nombreArchivo, blob, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: blob.type,
+          });
+
+        if (uploadError) {
+          console.error("Error subiendo imagen importada:", uploadError);
+          return;
+        }
+
+        const { data } = supabase.storage
+          .from("items")
+          .getPublicUrl(nombreArchivo);
+        setImagenUrl(data.publicUrl);
+      } catch (err) {
+        console.error("Error importando imagen:", err);
+      } finally {
+        setImportandoImagen(false);
+      }
     }
-  }, [codigoPrefill]);
+
+    importarImagen();
+  }, [imagenPrefill, imagenUrl, importandoImagen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +112,8 @@ function FormularioNuevoItem() {
     router.push(`/inventario/${data.id}`);
   }
 
+  const reconocidoPorOFF = !!nombrePrefill;
+
   return (
     <>
       <Link
@@ -84,10 +127,22 @@ function FormularioNuevoItem() {
         Nuevo item
       </h1>
 
-      {codigoPrefill && (
+      {reconocidoPorOFF && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 p-3 rounded-xl text-sm mb-6">
+          ✅ Producto reconocido en Open Food Facts. Revisa los datos y guarda.
+        </div>
+      )}
+
+      {!reconocidoPorOFF && codigoPrefill && (
         <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-3 rounded-xl text-sm mb-6">
           📷 Código escaneado prerellenado:{" "}
           <span className="font-mono">{codigoPrefill}</span>
+        </div>
+      )}
+
+      {importandoImagen && (
+        <div className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-3 rounded-xl text-sm mb-6">
+          📥 Importando imagen del producto...
         </div>
       )}
 
@@ -201,7 +256,7 @@ function FormularioNuevoItem() {
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            disabled={guardando}
+            disabled={guardando || importandoImagen}
             className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium px-5 py-3 rounded-xl shadow-sm transition-colors"
           >
             {guardando ? "Guardando..." : "Guardar item"}
