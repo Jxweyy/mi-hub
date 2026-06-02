@@ -146,22 +146,30 @@ export default function InventarioPage() {
         )}
 
         {!loading && !error && itemsFiltrados.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {itemsFiltrados.map((item) => (
-              <a key={item.id} href={`/inventario/${item.id}`} className="block bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
-                {item.imagen_url && (
+              <a key={item.id} href={`/inventario/${item.id}`} className="flex gap-3 bg-white dark:bg-slate-800 rounded-2xl p-3 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer">
+                {item.imagen_url ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={item.imagen_url} alt={item.nombre} className="w-full h-32 object-cover rounded-xl mb-3" />
+                  <img src={item.imagen_url} alt={item.nombre} className="w-16 h-16 flex-shrink-0 object-contain rounded-lg bg-slate-50 dark:bg-slate-700" />
+                ) : (
+                  <div className="w-16 h-16 flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-2xl">
+                    📦
+                  </div>
                 )}
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-lg">{item.nombre}</h3>
-                  <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${item.cantidad === 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" : item.cantidad < 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"}`}>
-                    {item.cantidad}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="font-semibold text-slate-900 dark:text-white text-base truncate">{item.nombre}</h3>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-lg flex-shrink-0 ${item.cantidad === 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" : item.cantidad < 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"}`}>
+                      {item.cantidad}
+                    </span>
+                  </div>
+                  {item.descripcion && <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-1">{item.descripcion}</p>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {item.categoria && <span className="inline-block text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded">{item.categoria}</span>}
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-mono truncate">{item.codigo_barras}</p>
+                  </div>
                 </div>
-                {item.descripcion && <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">{item.descripcion}</p>}
-                {item.categoria && <span className="inline-block text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded">{item.categoria}</span>}
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 font-mono truncate">{item.codigo_barras}</p>
               </a>
             ))}
           </div>

@@ -188,7 +188,7 @@ export default function ItemActions({ item }: { item: Item }) {
               <img
                 src={item.imagen_url}
                 alt={item.nombre}
-                className="w-48 h-48 object-cover rounded-2xl shadow-md"
+                className="w-48 h-48 object-contain rounded-2xl shadow-md bg-slate-50 dark:bg-slate-700"
               />
             </div>
           )}
